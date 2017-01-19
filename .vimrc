@@ -38,7 +38,7 @@ if has('gui_running')
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
-		autocmd vimenter * NERDTree C:\Users\ichimei\Google ドライブ\workspace
+		autocmd vimenter * NERDTree C:\Users\ichimei\Google ﾆ檀ﾆ停ｰﾆ辰ﾆ置\workspace
 		set lines=41
 		set columns=160
 	endif
