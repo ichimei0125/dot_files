@@ -15,7 +15,7 @@ if has("mac")
 elseif has("unix")
   " do stuff under linux and "
 elseif has("win32")
-	set encoding=cp932
+	set encoding=cp932 " for Japanese enviroment
 endif
 
 set fileencoding=utf-8
@@ -34,11 +34,11 @@ if has('gui_running')
 		set columns=125
 		set guifont=Menlo\ Regular:h13
 		let g:livepreview_previewer = 'open -a Preview'
-		autocmd vimenter * NERDTree workspace
+		autocmd vimenter * NERDTree """"""/ADD/YOUR/PATH 
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
-		autocmd vimenter * NERDTree C:\Users\ichimei\Google ƒhƒ‰ƒCƒu\workspace
+		autocmd vimenter * NERDTree """""C:\ADD\YOUR\PATH
 		set lines=41
 		set columns=160
 	endif
