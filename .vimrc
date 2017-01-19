@@ -13,7 +13,7 @@ set number
 if has("mac")
 	set encoding=utf-8
 elseif has("unix")
-  " do stuff under linux and "
+  " do stuff under linux 
 elseif has("win32")
 	set encoding=cp932 " for Japanese enviroment
 endif
