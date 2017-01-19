@@ -1,53 +1,44 @@
-"----------------------------
-"  must install 
-"  NERDTree, pathogen, happy_hacking
-"
-"  Mac:
-"----------------------------
+# coding: utf-8
+import sys, os
+sys.path.append(os.pardir)  # 親ディレクトリのファイルをインポートするための設定
+import numpy as np
+import pickle
+from dataset.mnist import load_mnist
+from common.functions import sigmoid, softmax
 
 
-syntax on
-set number
+def get_data():
+    (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, flatten=True, one_hot_label=False)
+    return x_test, t_test
 
-" encode
-if has("mac")
-	set encoding=utf-8
-elseif has("unix")
-  " do stuff under linux 
-elseif has("win32")
-	set encoding=cp932 " for Japanese enviroment
-endif
 
-set fileencoding=utf-8
-set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
-set fileformats=unix,dos,mac
+def init_network():
+    with open("sample_weight.pkl", 'rb') as f:
+        network = pickle.load(f)
+    return network
 
-" Add pathogen
-execute pathogen#infect()
 
-if has('gui_running')
-	if has("gui_gtk2")
-		set guifont=Inconsolata\ 12
+def predict(network, x):
+    W1, W2, W3 = network['W1'], network['W2'], network['W3']
+    b1, b2, b3 = network['b1'], network['b2'], network['b3']
 
-	elseif has("gui_macvim")
-		set lines=40
-		set columns=125
-		set guifont=Menlo\ Regular:h13
-		let g:livepreview_previewer = 'open -a Preview'
-		autocmd vimenter * NERDTree "/ADD/YOUR/PATH 
+    a1 = np.dot(x, W1) + b1
+    z1 = sigmoid(a1)
+    a2 = np.dot(z1, W2) + b2
+    z2 = sigmoid(a2)
+    a3 = np.dot(z2, W3) + b3
+    y = softmax(a3)
 
-	elseif has("gui_win32")
-		"set guifont=Consolas:h11:cANSI
-		autocmd vimenter * NERDTree "C:\ADD\YOUR\PATH
-		set lines=41
-		set columns=160
-	endif
-endif
+    return y
 
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
-"" quit if only NERDTree left
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
-" color
-color happy_hacking
+x, t = get_data()
+network = init_network()
+accuracy_cnt = 0
+for i in range(len(x)):
+    y = predict(network, x[i])
+    p= np.argmax(y) # 最も確率の高い要素のインデックスを取得
+    if p == t[i]:
+        accuracy_cnt += 1
+
+print("Accuracy:" + str(float(accuracy_cnt) / len(x)))
