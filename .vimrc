@@ -34,11 +34,11 @@ if has('gui_running')
 		set columns=125
 		set guifont=Menlo\ Regular:h13
 		let g:livepreview_previewer = 'open -a Preview'
-		autocmd vimenter * NERDTree """"""/ADD/YOUR/PATH 
+		autocmd vimenter * NERDTree "/ADD/YOUR/PATH 
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
-		autocmd vimenter * NERDTree """""C:\ADD\YOUR\PATH
+		autocmd vimenter * NERDTree "C:\ADD\YOUR\PATH
 		set lines=41
 		set columns=160
 	endif
