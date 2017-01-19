@@ -31,7 +31,9 @@ if has('gui_running')
 
 	if has("gui_gtk2")
 		set guifont=Inconsolata\ 12
-
+		set lines=42
+		set columns=130
+		
 	elseif has("gui_macvim")
 		set lines=40
 		set columns=125
