@@ -1,13 +1,12 @@
 "----------------------------
 "  must install 
 "  NERDTree, pathogen, happy_hacking
-"
-"  Mac:
 "----------------------------
 
 
 syntax on
 set number
+set tapstop=3
 
 " encode
 if has("mac")
