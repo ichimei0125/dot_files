@@ -16,7 +16,6 @@ elseif has("unix")
 elseif has("win32")
 	set encoding=cp932 " for Japanese enviroment
 endif
-set shellslash
 set fileencoding=utf-8
 set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
 set fileformats=unix,dos,mac
