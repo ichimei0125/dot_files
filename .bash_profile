@@ -10,4 +10,4 @@ alias pipup='pip freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs pip in
 alias pip3up='pip3 freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs pip3 install -U'
 
 # alias for latex
-alias latexpdf='latex *.tex && dvipdfmx *.dvi && open -a Preview *.pdf'
+alias latexpdf='uplatex *.tex && dvipdfmx *.dvi && open -a Preview *.pdf'
