@@ -26,6 +26,7 @@ execute pathogen#infect()
 if has('gui_running')
 	" set Boolmark workspace or whatever you want
 	autocmd vimenter * NERDTree workspace
+	let NERDTreeShowBookmarks=1
 
 	if has("gui_gtk2")
 		set guifont=Inconsolata\ 12
