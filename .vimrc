@@ -24,9 +24,9 @@ set fileformats=unix,dos,mac
 execute pathogen#infect()
 
 if has('gui_running')
-	" set Boolmark workspace or whatever you want
-	autocmd vimenter * NERDTree workspace
+	autocmd vimenter * NERDTree workspace	" set Boolmark workspace or whatever you want
 	let NERDTreeShowBookmarks=1
+	set guioptions-=L  "remove left-hand scroll bar
 
 	if has("gui_gtk2")
 		set guifont=Inconsolata\ 12
@@ -43,6 +43,7 @@ if has('gui_running')
 		"set guifont=Consolas:h11:cANSI
 		set lines=41
 		set columns=160
+		set guioptions-=T  "remove toolbar
 	endif
 endif
 
