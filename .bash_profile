@@ -11,3 +11,4 @@ alias pip3up='pip3 freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs pip3
 
 # alias for latex
 alias latexpdf='latex *.tex && dvipdfmx *.dvi'
+alias platexpdf='platex *.tex && dvipdfmx *.dvi'
