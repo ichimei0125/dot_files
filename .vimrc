@@ -24,6 +24,9 @@ set fileformats=unix,dos,mac
 execute pathogen#infect()
 
 if has('gui_running')
+	" -----color-----
+	color happy_hacking
+
 	autocmd vimenter * NERDTree workspace	" set Boolmark workspace or whatever you want
 	let NERDTreeShowBookmarks=1
 	set guioptions-=L  "remove left-hand scroll bar
@@ -52,6 +55,3 @@ autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
 "" quit if only NERDTree left
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
-" -----color-----
-color happy_hacking
