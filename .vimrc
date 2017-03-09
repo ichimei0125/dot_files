@@ -6,7 +6,7 @@
 
 syntax on
 set number
-set tapstop=3
+set ts=3
 
 " encode
 if has("mac")
