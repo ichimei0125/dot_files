@@ -44,6 +44,7 @@ if has('gui_running')
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
+		set guifont=MS_Gothic:h11
 		set lines=41
 		set columns=160
 		set guioptions-=T  "remove toolbar
