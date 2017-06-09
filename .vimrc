@@ -1,58 +1,75 @@
-"----------------------------
-"  must install 
-"  NERDTree, pathogen, happy_hacking
-"----------------------------
-
-
 syntax on
 set number
-set ts=3
+set tabstop=4
 
 " encode
 if has("mac")
 	set encoding=utf-8
 elseif has("unix")
-  " do stuff under linux 
+  " do stuff under linux and "
 elseif has("win32")
-	set encoding=cp932 " for Japanese enviroment
+	set encoding=cp932
 endif
+
 set fileencoding=utf-8
 set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
 set fileformats=unix,dos,mac
 
 " Add pathogen
-execute pathogen#infect()
+execute pathogen#infect('bundle/{}')
 
 if has('gui_running')
-	" -----color-----
-	color happy_hacking
+	color happy_hacking "color
 
-	autocmd vimenter * NERDTree workspace	" set Boolmark workspace or whatever you want
+	autocmd vimenter * NERDTree workspace
 	let NERDTreeShowBookmarks=1
-	set guioptions-=L  "remove left-hand scroll bar
 
 	if has("gui_gtk2")
 		set guifont=Inconsolata\ 12
-		set lines=42
-		set columns=130
-		
+
 	elseif has("gui_macvim")
 		set lines=40
 		set columns=125
 		set guifont=Menlo\ Regular:h13
-		let g:livepreview_previewer = 'open -a Preview'
+		set guioptions-=L  "remove left-hand scroll bar
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
-		set guifont=MS_Gothic:h11
 		set lines=41
 		set columns=160
-		set guioptions-=T  "remove toolbar
 	endif
 endif
 
-" -----NERDTree-----
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
 "" quit if only NERDTree left
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" original http://stackoverflow.com/questions/12374200/using-uncrustify-with-vim/15513829#15513829
+" pip3 install autopep8
+function! Preserve(command)
+    " Save the last search.
+    let search = @/
+    " Save the current cursor position.
+    let cursor_position = getpos('.')
+    " Save the current window position.
+    normal! H
+    let window_position = getpos('.')
+    call setpos('.', cursor_position)
+    " Execute the command.
+    execute a:command
+    " Restore the last search.
+    let @/ = search
+    " Restore the previous window position.
+    call setpos('.', window_position)
+    normal! zt
+    " Restore the previous cursor position.
+    call setpos('.', cursor_position)
+endfunction
+
+function! Autopep8()
+    call Preserve(':silent %!autopep8 -')
+endfunction
+
+" Shift + F で自動修正
+autocmd FileType python nnoremap <S-f> :call Autopep8()<CR>
