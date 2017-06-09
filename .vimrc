@@ -35,8 +35,9 @@ if has('gui_running')
 
 	elseif has("gui_win32")
 		"set guifont=Consolas:h11:cANSI
-		set lines=41
-		set columns=160
+		set guifont=MS_Gothic:h12
+		set lines=35
+		set columns=130	
 	endif
 endif
 
