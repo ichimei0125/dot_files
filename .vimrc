@@ -38,6 +38,8 @@ if has('gui_running')
 		set guifont=MS_Gothic:h12
 		set lines=35
 		set columns=130	
+		set guioptions-=L  "remove left-hand scroll bar
+		set guioptions-=T  "remove toolbar
 	endif
 endif
 
