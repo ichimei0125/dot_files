@@ -76,3 +76,6 @@ endfunction
 
 " Shift + F で自動修正
 autocmd FileType python nnoremap <S-f> :call Autopep8()<CR>
+
+" run python file
+nnoremap <silent> <F5> :!clear;python %<CR>
