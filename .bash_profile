@@ -14,12 +14,8 @@ alias latexpdf='latex *.tex && dvipdfmx *.dvi' # && open -a Preview *.pdf'
 alias platexpdf='platex *.tex && dvipdfmx *.dvi' 
 
 alias upbrew='brew update && brew upgrade'
-alias cleanbrew='brew cleanup && brew cask cleanup'
 export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
 
 # alias for updatedb
 alias updatedb='sudo /usr/libexec/locate.updatedb'
-
-# alias for powershell docker version
-alias powershell='docker run -it microsoft/powershell'
 
