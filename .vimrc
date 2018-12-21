@@ -16,7 +16,8 @@ set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
 set fileformats=unix,dos,mac
 
 " Add pathogen
-execute pathogen#infect('bundle/{}')
+execute pathogen#infect()
+filetype plugin indent on
 
 if has('gui_running')
 	color happy_hacking "color
