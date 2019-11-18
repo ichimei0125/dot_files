@@ -2,7 +2,7 @@
 autoload -Uz colors
 colors
 
-PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]:%{$reset_color%} %~
+PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]: %{$fg[cyan]%}%~%{$reset_color%}
 %# "
 
 # Go
