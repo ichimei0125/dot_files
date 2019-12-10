@@ -16,10 +16,20 @@ set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
 set fileformats=unix,dos,mac
 
 " Add pathogen
-execute pathogen#infect('bundle/{}')
+" execute pathogen#infect('bundle/{}')
+
+" Specify a directory for plugins
+" - For Neovim: stdpath('data') . '/plugged'
+" - Avoid using standard Vim directory names like 'plugin'
+"call plug#begin('~/.vim/plugged')
+"call plug#begin('C:\Users\y_shi\Vim\vimfiles\plugged')
+Plug 'scrooloose/nerdtree'
+Plug 'arcticicestudio/nord-vim'
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+call plug#end()
 
 if has('gui_running')
-"	color happy_hacking "color
+	colorscheme nord
 
 	autocmd vimenter * NERDTree workspace
 	let NERDTreeShowBookmarks=1
