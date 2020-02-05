@@ -2,8 +2,7 @@
 autoload -Uz colors
 colors
 
-PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]: %{$fg[cyan]%}%~%{$reset_color%}
-%# "
+PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]: %{$fg[cyan]%}%~%{$reset_color%}"$'\n'"%# "
 
 # Go
 export GOPATH="/Users/ichimei0125/go:/Users/ichimei0125/workspace/go"
