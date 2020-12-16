@@ -25,8 +25,10 @@ set fileformats=unix,dos,mac
 "call plug#begin('~/.vim/plugged')
 "call plug#begin('C:\Users\y_shi\Vim\vimfiles\plugged')
 Plug 'scrooloose/nerdtree'
-Plug 'arcticicestudio/nord-vim'
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+"Plug 'arcticicestudio/nord-vim'
+"Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 call plug#end()
 
 if has('gui_running')
