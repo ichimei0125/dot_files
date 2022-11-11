@@ -53,6 +53,7 @@ if has('gui_running')
 		set columns=150	
 		set guioptions-=L  "remove left-hand scroll bar
 		set guioptions-=T  "remove toolbar
+		set guioptions-=m  "remove menubar
 	endif
 endif
 
