@@ -70,3 +70,4 @@ let NERDTreeShowHidden=1 " show dotfiles
 	" preview page title
 	" ${name} will be replace with the file name
 "let g:mkdp_page_title = '${name}'
+"nmap <C-F5> <Plug>MarkdownPreviewToggle
