@@ -27,7 +27,8 @@ call plug#begin()
 Plug 'scrooloose/nerdtree'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
-"Plug 'arcticicestudio/nord-vim'
+Plug 'arcticicestudio/nord-vim'
+Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install' }
 "Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 call plug#end()
 
@@ -64,3 +65,8 @@ autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 let NERDTreeShowHidden=1 " show dotfiles
 
+" MarkdownPreview
+	" for fixbug
+	" preview page title
+	" ${name} will be replace with the file name
+"let g:mkdp_page_title = '${name}'
