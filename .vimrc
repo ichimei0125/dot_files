@@ -8,8 +8,10 @@ if has("mac")
 	set encoding=utf-8
 elseif has("unix")
   " do stuff under linux and "
+	set encoding=utf-8
 elseif has("win32")
-	set encoding=cp932
+	"set encoding=cp932
+	set encoding=utf-8
 endif
 
 set fileencoding=utf-8
