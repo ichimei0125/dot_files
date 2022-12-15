@@ -2,6 +2,8 @@ syntax on
 set number
 set relativenumber
 set tabstop=4
+" access system clipboard
+set clipboard=unnamed,autoselect
 
 " encode
 if has("mac")
