@@ -13,3 +13,6 @@ export PATH="$PATH:$GOBIN"
 # pyenv
 eval "$(pyenv init -)"
 
+# open same directory in new tab
+precmd () {print -Pn "\e]2; %~/ \a"}
+preexec () {print -Pn "\e]2; %~/ \a"}
