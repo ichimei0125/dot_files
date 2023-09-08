@@ -13,7 +13,23 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
 	"preservim/nerdtree",
-	"nordtheme/vim"
+	"nordtheme/vim",
+	"vim-airline/vim-airline",
+	"vim-airline/vim-airline-themes",
+	"davidhalter/jedi-vim",
+--	"jeetsukumaran/vim-pythonsense",
+--	"mhinz/vim-signify",
+  	'puremourning/vimspector',
+    -- 使用异步加载插件
+	'skywind3000/asyncrun.vim',
+   	'dense-analysis/ale',
+    {'neoclide/coc.nvim', branch = 'release'},
+
+    
+    -- Python 开发相关插件
+    'vim-python/python-syntax',
+    {'numirias/semshi',cmd='UpdateRemotePlugins'}
+    
 })
 
 --load vimrc.vim
