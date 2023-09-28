@@ -45,28 +45,6 @@ let g:coc_global_extensions = ['coc-snippets', 'coc-python', 'coc-ccls', 'coc-js
 let g:vimspector_install_gadgets = [ { 'name': 'python' } ]
 let g:vimspector_py_path = '/Users/shi/.virtualenv/py311/bin/python'
 
-if has('gui_running')
-	colorscheme nord
-"
-"	if has("gui_gtk2")
-"		set guifont=Inconsolata\ 12
-"
-"	elseif has("gui_macvim")
-"		set lines=70
-"		set columns=180
-"		set guifont=Menlo\ Regular:h13
-"		set guioptions-=L  "remove left-hand scroll bar
-"
-"	elseif has("gui_win32")
-"		"set guifont=Consolas:h11:cANSI
-"		set guifont=MS_Gothic:h14
-"		set lines=42
-"		set columns=150	
-"		set guioptions-=L  "remove left-hand scroll bar
-"		set guioptions-=T  "remove toolbar
-"	endif
-endif
-
 
 " Start NERDTree when Vim starts with a directory argument.
 autocmd StdinReadPre * let s:std_in=1
