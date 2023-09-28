@@ -32,6 +32,12 @@ require("lazy").setup({
     
 })
 
+if vim.g.neovide then
+    -- Put anything you want to happen only in Neovide here
+    vim.cmd("colorscheme nord")
+    vim.o.guifont = "Inconsolata Nerd Font Mono:h14" -- text below applies for VimScript
+end
+
 --load vimrc.vim
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
 vim.cmd.source(vimrc)
