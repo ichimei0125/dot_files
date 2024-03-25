@@ -1,0 +1,7 @@
+shell = "powershell"
+working_directory = "~"
+
+[font]
+size = 14
+
+
