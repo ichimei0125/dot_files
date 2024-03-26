@@ -1,4 +1,4 @@
-shell = "powershell"
+shell = "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
 working_directory ="C:\\Users\\shi"
 
 [window]
