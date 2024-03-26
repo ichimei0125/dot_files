@@ -1,7 +1,13 @@
 shell = "powershell"
-working_directory = "~"
+working_directory ="C:\\Users\\shi"
 
-[font]
-size = 14
+[window]
+dimensions = { columns = 130, lines = 35 }
+position = { x = 850, y = 390 }
 
+[selection]
+save_to_clipboard = true
+
+[cursor]
+style = {blinking = "On"}
 
