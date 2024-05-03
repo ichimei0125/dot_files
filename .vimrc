@@ -1,23 +1,23 @@
 syntax on
 set number
-set relativenumber
+"set relativenumber
 set tabstop=4
-" access system clipboard
-set clipboard=unnamed,autoselect
+set nowrap
+set hlsearch
 
 " encode
-if has("mac")
-	set encoding=utf-8
-elseif has("unix")
-  " do stuff under linux and "
-	set encoding=utf-8
-elseif has("win32")
-	"set encoding=cp932
-	set encoding=utf-8
-endif
+set encoding=utf-8
+"if has("mac")
+"	set encoding=utf-8
+"elseif has("unix")
+ " do stuff under linux and "
+"elseif has("win32")
+	" set encoding=cp932
+"set encoding=utf-8
+"endif
 
 set fileencoding=utf-8
-set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
+"set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8,cp932
 set fileformats=unix,dos,mac
 
 call plug#begin()
@@ -31,13 +31,17 @@ call plug#begin()
 Plug 'scrooloose/nerdtree'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
-Plug 'arcticicestudio/nord-vim'
+Plug 'nordtheme/vim'
 Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install' }
-"Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+Plug 'easymotion/vim-easymotion'
+Plug 'davidhalter/jedi-vim'
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 call plug#end()
 
+set background=dark
+colorscheme nord
+
 if has('gui_running')
-	colorscheme nord
 
 	autocmd vimenter * NERDTree workspace
 	let NERDTreeShowBookmarks=1
@@ -52,10 +56,9 @@ if has('gui_running')
 		set guioptions-=L  "remove left-hand scroll bar
 
 	elseif has("gui_win32")
-		"set guifont=Consolas:h11:cANSI
-		set guifont=MS_Gothic:h14
+		set guifont=Inconsolata\ Nerd\ Font\ Mono:h14
 		set lines=42
-		set columns=150	
+		set columns=170	
 		set guioptions-=L  "remove left-hand scroll bar
 		set guioptions-=T  "remove toolbar
 		set guioptions-=m  "remove menubar
@@ -75,3 +78,15 @@ let NERDTreeShowHidden=1 " show dotfiles
 	" ${name} will be replace with the file name
 "let g:mkdp_page_title = '${name}'
 "nmap <C-F5> <Plug>MarkdownPreviewToggle
+
+
+" 列出所有键映射
+function! ListMappings()
+    let all_maps = getcompletion('', 'map')
+        for map in all_maps
+                echo map
+                    endfor
+                    endfunction
+
+                    " 为了在 Vim 中执行该函数，你可以创建一个自定义命令
+                    command! ListAllMappings call ListMappings()
