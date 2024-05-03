@@ -22,7 +22,7 @@ $null = Register-ObjectEvent -InputObject $LazyLoadProfile -EventName Invocation
 # sync dot files
 function get-dotfiles {
 	$dot_files = @{
-	"C:\Users\shi\Documents\PowerShell\profile.ps1" = "C:\Users\shi\workspace\Github\dot_files\powershell";
+	"C:\Users\shi\Documents\PowerShell\profile.ps1" = "C:\Users\shi\workspace\Github\dot_files\powershell\profile.ps1";
 	"C:\Users\shi\_vimrc" = "C:\Users\shi\workspace\Github\dot_files\.vimrc"
 	}
 	return $dot_files
@@ -53,9 +53,9 @@ function gitpulldotfiles {
 	git pull
 
 	$dot_files.GetEnumerator() | ForEach-Object {
-		#cp $_.Value $_.Key
+		cp $_.Value $_.Key
 
-		[System.IO.File]::Copy($_.Value, $_.Key, $true);
+		#[System.IO.File]::Copy($_.Value, $_.Key, $true);
 	}
 	cd $now_path
 }
