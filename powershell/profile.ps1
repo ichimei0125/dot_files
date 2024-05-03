@@ -20,12 +20,16 @@ $null = Register-ObjectEvent -InputObject $LazyLoadProfile -EventName Invocation
 }
 
 # sync dot files
-function gitdotfiles() {
+function get-dotfiles {
 	$dot_files = @{
 	"C:\Users\shi\Documents\PowerShell\profile.ps1" = "C:\Users\shi\workspace\Github\dot_files\powershell";
 	"C:\Users\shi\_vimrc" = "C:\Users\shi\workspace\Github\dot_files\.vimrc"
 	}
+	return $dot_files
+}
+function gitpushdotfiles {
 	$git_repo = "C:\Users\shi\workspace\Github\dot_files"
+	$dot_files = get-dotfiles
 
 	$dot_files.GetEnumerator() | ForEach-Object {
 		cp $_.Key $_.Value
@@ -37,5 +41,19 @@ function gitdotfiles() {
 	git add .
 	git commit -m "update by gitdotfiles"
 	git push
+	cd $now_path
+}
+function gitpulldotfiles {
+	$git_repo = "C:\Users\shi\workspace\Github\dot_files"
+	$dot_files = get-dotfiles
+
+	# git push
+	$now_path = Get-Location
+	cd $git_repo
+	git pull
+
+	$dot_files.GetEnumerator() | ForEach-Object {
+		cp $_.Value $_.Key
+	}
 	cd $now_path
 }
