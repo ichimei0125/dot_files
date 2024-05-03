@@ -54,6 +54,8 @@ function gitpulldotfiles {
 
 	$dot_files.GetEnumerator() | ForEach-Object {
 		cp $_.Value $_.Key
+
+		[System.IO.File]::Copy($_.Value, $_.Key, $true);
 	}
 	cd $now_path
 }
