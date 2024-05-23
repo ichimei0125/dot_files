@@ -1,8 +1,15 @@
+ZSH_THEME="robbyrussell"
 # zsh Promt
 autoload -Uz colors
 colors
 
-PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]: %{$fg[cyan]%}%~%{$reset_color%}"$'\n'"%# "
+# 启用选项
+#setopt prompt_subst
+#PROMPT="%{$fg[green]%}%n %{$fg[yellow]%}@[%m]: %{$fg[cyan]%}%~%{$reset_color%}"$'\n'"%# "
+PS1="%{$fg[red]%}%n %{$fg[cyan]%}@[%m]: %{$fg[yellow]%}%~%{$reset_color%}"$'\n'"%# "
+#PS1='%F{red}%n%f@%F{cyan}%m%f %F{yellow}%1~%f %# '
+# 启用右提示符
+RPS1='%F{green}[%?] %f'
 
 export LANG=en_US
 
