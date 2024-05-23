@@ -3,6 +3,7 @@
 function get_dotfiles {
     declare -A dot_files
     dot_files=(
+        ["/Users/shi/.vimrc"]="/Users/shi/workspace/Github/dot_files/vim/.vimrc"
         ["/Users/shi/.zshrc"]="/Users/shi/workspace/Github/dot_files/zsh/.zshrc"
         ["/Users/shi/.zsh.d/syncdotfiles.zsh"]="/Users/shi/workspace/Github/dot_files/zsh/.zsh.d/syncdotfiles.zsh"
     )
