@@ -23,7 +23,7 @@ $null = Register-ObjectEvent -InputObject $LazyLoadProfile -EventName Invocation
 function get-dotfiles {
 	$dot_files = @{
 	"C:\Users\shi\Documents\PowerShell\profile.ps1" = "C:\Users\shi\workspace\Github\dot_files\powershell\profile.ps1";
-	"C:\Users\shi\_vimrc" = "C:\Users\shi\workspace\Github\dot_files\.vimrc"
+	"C:\Users\shi\_vimrc" = "C:\Users\shi\workspace\Github\dot_files\vim\.vimrc"
 	}
 	return $dot_files
 }
