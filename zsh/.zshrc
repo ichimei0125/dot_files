@@ -39,7 +39,6 @@ export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 # pyenv alias
-alias py311='source ~/.virtualenv/py311/bin/activate'
 alias py312='source ~/.virtualenv/py312/bin/activate'
 # python pj
 export PYTHONPATH="/Users/shi/workspace/Github/PredStock"
