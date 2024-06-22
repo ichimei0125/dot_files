@@ -34,10 +34,8 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'nordtheme/vim'
 Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install' }
 Plug 'easymotion/vim-easymotion'
-Plug 'chrisbra/csv.vim'
 Plug 'davidhalter/jedi-vim'
 Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
-Plug 'puremourning/vimspector'
 call plug#end()
 
 set background=dark
