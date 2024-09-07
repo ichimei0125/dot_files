@@ -20,6 +20,8 @@ set fileencoding=utf-8
 set fileencodings=utf-8,cp932
 set fileformats=unix,dos,mac
 
+let g:python3_host_prog = 'C:\Users\shi\.virtualenv\py312\Scripts\python.exe'
+
 " 快捷键映射
 nnoremap <F8> :NERDTreeToggle<CR>
 
