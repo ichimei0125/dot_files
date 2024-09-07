@@ -22,29 +22,6 @@ set fileformats=unix,dos,mac
 
 " 快捷键映射
 nnoremap <F8> :NERDTreeToggle<CR>
-nnoremap <F9> :AsyncRun python %<CR>
-nnoremap <F10> :AsyncRun gcc -Wall -o %:r %<CR>
-nnoremap <F12> :ALEToggle<CR>
-
-" 启动调试会话
-nmap <F5> :call vimspector#Launch()<CR>
-
-" 设置断点
-nmap <F9> :call vimspector#ToggleBreakpoint()<CR>
-
-" 单步执行
-nmap <F10> :call vimspector#Continue()<CR>
-nmap <F11> :call vimspector#StepOver()<CR>
-nmap <F12> :call vimspector#StepInto()<CR>
-
-
-" 设置 Coc.nvim
-let g:coc_global_extensions = ['coc-snippets', 'coc-python', 'coc-ccls', 'coc-json', 'coc-highlight']
-
-" 在 vimspector 配置中设置 Python 解释器路径
-let g:vimspector_install_gadgets = [ { 'name': 'python' } ]
-let g:vimspector_py_path = '/Users/shi/.virtualenv/py311/bin/python'
-
 
 " Start NERDTree when Vim starts with a directory argument.
 autocmd StdinReadPre * let s:std_in=1
