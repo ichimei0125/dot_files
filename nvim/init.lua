@@ -45,3 +45,5 @@ end
 --load vimrc.vim
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
 vim.cmd.source(vimrc)
+local confrc = vim.fn.stdpath("config") .. "/config.vim"
+vim.cmd.source(confrc)
