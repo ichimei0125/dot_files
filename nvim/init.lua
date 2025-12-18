@@ -29,6 +29,16 @@ require("lazy").setup({
     "nordtheme/vim",
     "vim-airline/vim-airline",
     "vim-airline/vim-airline-themes",
+    -- install with yarn or npm
+    {
+      "iamcco/markdown-preview.nvim",
+      cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+      build = "cd app && yarn install",
+      init = function()
+        vim.g.mkdp_filetypes = { "markdown", "md" }
+      end,
+      ft = { "markdown", "md" },
+    },
   },
   checker = { enabled = true },
 })
