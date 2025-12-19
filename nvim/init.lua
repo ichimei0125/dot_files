@@ -29,6 +29,7 @@ require("lazy").setup({
     "nordtheme/vim",
     "vim-airline/vim-airline",
     "vim-airline/vim-airline-themes",
+    "neovim/nvim-lspconfig",
     -- install with yarn or npm
     {
       "iamcco/markdown-preview.nvim",
@@ -42,6 +43,11 @@ require("lazy").setup({
   },
   checker = { enabled = true },
 })
+
+-- lsp custom lua script
+-- load lsp
+require('lsp.pyright')
+vim.lsp.enable('pyright')
 
 --load vimrc.vim
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
