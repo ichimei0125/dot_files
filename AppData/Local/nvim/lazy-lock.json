@@ -1,0 +1,11 @@
+{
+  "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
+  "markdown-preview.nvim": { "branch": "master", "commit": "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
+  "nerdtree": { "branch": "master", "commit": "690d061b591525890f1471c6675bcb5bdc8cdff9" },
+  "nvim-lspconfig": { "branch": "master", "commit": "ac04ec3c2af08e9821b4eb64ede86072b9b213bf" },
+  "obsidian.nvim": { "branch": "main", "commit": "ae1f76a75c7ce36866e1d9342a8f6f5b9c2caf9b" },
+  "plenary.nvim": { "branch": "master", "commit": "b9fd5226c2f76c951fc8ed5923d85e4de065e509" },
+  "vim": { "branch": "main", "commit": "f13f5dfbb784deddbc1d8195f34dfd9ec73e2295" },
+  "vim-airline": { "branch": "master", "commit": "b03fdc542f5155b54959102a2aecaf6c792dce01" },
+  "vim-airline-themes": { "branch": "master", "commit": "77aab8c6cf7179ddb8a05741da7e358a86b2c3ab" }
+}
