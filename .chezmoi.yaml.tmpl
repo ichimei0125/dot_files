@@ -1,6 +1,6 @@
 {{- if eq .chezmoi.os "windows" }}
 nvim:
-  targetPath: "{{ .chezmoi.env.LOCALAPPDATA }}/nvim"
+  targetPath: '{{ env "LOCALAPPDATA" }}/nvim'
 {{- else }}
 nvim:
   targetPath: ".config/nvim"
