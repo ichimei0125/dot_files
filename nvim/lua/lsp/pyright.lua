@@ -21,10 +21,23 @@ local function set_python_path(command)
   end
 end
 
+local function get_venv_python(root_dir)
+  local base = root_dir or vim.fn.getcwd()
+  local win_path = vim.fs.joinpath(base, '.venv', 'Scripts', 'python.exe')
+  if vim.uv.fs_stat(win_path) then
+    return win_path
+  end
+  local posix_path = vim.fs.joinpath(base, '.venv', 'bin', 'python')
+  if vim.uv.fs_stat(posix_path) then
+    return posix_path
+  end
+  return nil
+end
+
 ---@type vim.lsp.Config
 return {
   cmd = { 'pyright-langserver', '--stdio' },
-  filetypes = { 'python', 'py' },
+  filetypes = { 'python' },
   root_markers = {
     'pyrightconfig.json',
     'pyproject.toml',
@@ -36,6 +49,7 @@ return {
   },
   settings = {
     python = {
+      pythonPath = get_venv_python(vim.fn.getcwd()),
       analysis = {
         autoSearchPaths = true,
         useLibraryCodeForTypes = true,
@@ -43,7 +57,22 @@ return {
       },
     },
   },
+  on_init = function(client)
+    local venv_python = get_venv_python(client.config.root_dir)
+    if venv_python then
+      client.config.settings = vim.tbl_deep_extend('force', client.config.settings, {
+        python = { pythonPath = venv_python },
+      })
+    end
+  end,
   on_attach = function(client, bufnr)
+    local venv_python = get_venv_python(client.config.root_dir)
+    if venv_python then
+      client.config.settings = vim.tbl_deep_extend('force', client.config.settings, {
+        python = { pythonPath = venv_python },
+      })
+      client:notify('workspace/didChangeConfiguration', { settings = nil })
+    end
     vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightOrganizeImports', function()
       local params = {
         command = 'pyright.organizeimports',
