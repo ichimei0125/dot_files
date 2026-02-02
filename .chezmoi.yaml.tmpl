@@ -1,7 +1,0 @@
-{{- if eq .chezmoi.os "windows" }}
-nvim:
-  targetPath: '{{ env "LOCALAPPDATA" }}/nvim'
-{{- else }}
-nvim:
-  targetPath: ".config/nvim"
-{{- end }}
