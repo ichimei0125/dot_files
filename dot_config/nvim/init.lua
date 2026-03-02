@@ -30,6 +30,14 @@ require("lazy").setup({
     "vim-airline/vim-airline",
     "vim-airline/vim-airline-themes",
     "neovim/nvim-lspconfig",
+    "hrsh7th/nvim-cmp",
+    "hrsh7th/cmp-nvim-lsp",
+    "hrsh7th/cmp-buffer",
+    "hrsh7th/cmp-path",
+    "L3MON4D3/LuaSnip",
+    "saadparwaiz1/cmp_luasnip",
+    "mfussenegger/nvim-dap",
+    "mfussenegger/nvim-dap-python",
     -- install with yarn or npm
     {
       "iamcco/markdown-preview.nvim",
@@ -52,9 +60,7 @@ require("lazy").setup({
 -- })
 
 -- lsp custom lua script
--- load lsp
-require('lsp.pyright')
-vim.lsp.enable('pyright')
+require("lsp.python")
 
 --load vimrc.vim
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
