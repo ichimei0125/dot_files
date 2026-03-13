@@ -15,30 +15,32 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Make sure to setup `mapleader` and `maplocalleader` before
--- loading lazy.nvim so that mappings are correct.
--- This is also a good place to setup other settings (vim.opt)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- Setup lazy.nvim
 require("lazy").setup({
   spec = {
-    -- add your plugins here
     "preservim/nerdtree",
     "nordtheme/vim",
     "vim-airline/vim-airline",
     "vim-airline/vim-airline-themes",
+    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
     "neovim/nvim-lspconfig",
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
     "hrsh7th/nvim-cmp",
     "hrsh7th/cmp-nvim-lsp",
     "hrsh7th/cmp-buffer",
     "hrsh7th/cmp-path",
     "L3MON4D3/LuaSnip",
     "saadparwaiz1/cmp_luasnip",
+    "rafamadriz/friendly-snippets",
     "mfussenegger/nvim-dap",
     "mfussenegger/nvim-dap-python",
-    -- install with yarn or npm
+    "rcarriga/nvim-dap-ui",
+    "nvim-neotest/nvim-nio",
+    "stevearc/conform.nvim",
     {
       "iamcco/markdown-preview.nvim",
       cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
@@ -47,21 +49,12 @@ require("lazy").setup({
         vim.g.mkdp_filetypes = { "markdown", "md" }
       end,
       ft = { "markdown", "md" },
-    }
+    },
   },
   checker = { enabled = true },
 })
 
--- vim.api.nvim_create_autocmd("FileType", {
---   pattern = "markdown",
---   callback = function()
---     vim.opt_local.conceallevel = 2
---   end,
--- })
-
--- lsp custom lua script
 require("lsp.python")
 
---load vimrc.vim
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
 vim.cmd.source(vimrc)
