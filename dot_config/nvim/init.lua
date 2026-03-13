@@ -54,7 +54,22 @@ require("lazy").setup({
   checker = { enabled = true },
 })
 
-require("lsp.python")
+local function load_python_ide()
+  if vim.g.loaded_python_ide == 1 then
+    return
+  end
+  vim.g.loaded_python_ide = 1
+  require("lsp.python")
+end
+
+if vim.bo.filetype == "python" then
+  load_python_ide()
+else
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = "python",
+    callback = load_python_ide,
+  })
+end
 
 local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
 vim.cmd.source(vimrc)

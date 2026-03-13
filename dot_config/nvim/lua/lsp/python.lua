@@ -66,6 +66,75 @@ local function notify(msg, level)
   end)
 end
 
+local function has_python_module(py, module)
+  local result = vim.system({
+    py,
+    "-c",
+    ([[import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(%q) else 1)]]):format(module),
+  }, { text = true }):wait()
+  return result.code == 0
+end
+
+local function has_pip(py)
+  return has_python_module(py, "pip")
+end
+
+local function find_uv(root_dir)
+  local root = root_dir or vim.fn.getcwd()
+  local candidates = {
+    vim.fs.joinpath(root, ".venv", "Scripts", "uv.exe"),
+    vim.fs.joinpath(root, ".venv", "bin", "uv"),
+    vim.fs.joinpath(root, "venv", "Scripts", "uv.exe"),
+    vim.fs.joinpath(root, "venv", "bin", "uv"),
+    vim.fn.exepath("uv"),
+  }
+
+  for _, candidate in ipairs(candidates) do
+    if candidate and candidate ~= "" and path_exists(candidate) then
+      return candidate
+    end
+  end
+end
+
+local function install_with_uv(uv_cmd, py, packages)
+  if not uv_cmd then
+    return false, "uv not found"
+  end
+
+  local result = vim.system(
+    vim.list_extend({ uv_cmd, "pip", "install", "--python", py }, packages),
+    { text = true }
+  ):wait()
+
+  if result.code == 0 then
+    return true, nil
+  end
+
+  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
+end
+
+local function repair_pip(py)
+  local result = vim.system({ py, "-m", "ensurepip", "--upgrade" }, { text = true }):wait()
+  if result.code == 0 and has_pip(py) then
+    return true, nil
+  end
+
+  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
+end
+
+local function install_with_pip(py, packages)
+  local result = vim.system(
+    vim.list_extend({ py, "-m", "pip", "install", "--disable-pip-version-check" }, packages),
+    { text = true }
+  ):wait()
+
+  if result.code == 0 then
+    return true, nil
+  end
+
+  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
+end
+
 local function ensure_venv_python_packages(root_dir)
   local root = root_dir or vim.fn.getcwd()
   if ensured_venv_roots[root] then
@@ -95,13 +164,7 @@ local function ensure_venv_python_packages(root_dir)
 
   local missing = {}
   for _, item in ipairs(required_modules) do
-    local result = vim.system({
-      py,
-      "-c",
-      ([[import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(%q) else 1)]]):format(item.module),
-    }, { text = true }):wait()
-
-    if result.code ~= 0 then
+    if not has_python_module(py, item.module) then
       table.insert(missing, item.package)
     end
   end
@@ -112,18 +175,31 @@ local function ensure_venv_python_packages(root_dir)
 
   notify(("%s 缺失，正在安装到 %s"):format(table.concat(missing, ", "), venv))
 
-  vim.system({
-    py,
-    "-m",
-    "pip",
-    "install",
-    "--disable-pip-version-check",
-    unpack(missing),
-  }, { text = true }, function(result)
-    if result.code == 0 then
+  vim.schedule(function()
+    local uv_cmd = find_uv(root)
+    local ok, err
+
+    if not has_pip(py) then
+      if uv_cmd then
+        ok, err = install_with_uv(uv_cmd, py, missing)
+        if ok then
+          notify(("已通过 uv 安装到项目虚拟环境: %s"):format(table.concat(missing, ", ")))
+          return
+        end
+        notify(("uv 安装失败，准备修复 pip: %s"):format(err), vim.log.levels.WARN)
+      end
+
+      ok, err = repair_pip(py)
+      if not ok then
+        notify(("修复 pip 失败: %s"):format(err), vim.log.levels.ERROR)
+        return
+      end
+    end
+
+    ok, err = install_with_pip(py, missing)
+    if ok then
       notify(("已安装到项目虚拟环境: %s"):format(table.concat(missing, ", ")))
     else
-      local err = (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
       notify(("安装失败: %s"):format(err), vim.log.levels.ERROR)
     end
   end)
