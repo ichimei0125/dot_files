@@ -191,7 +191,7 @@ return {
           icon = icon,
           desc = desc,
           action = action,
-          key = "",
+          key = icon,
         }
       end
 
