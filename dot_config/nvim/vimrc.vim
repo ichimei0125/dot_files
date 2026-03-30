@@ -21,10 +21,3 @@ set updatetime=250
 set termguicolors
 set completeopt=menu,menuone,noselect
 set cursorline
-
-nnoremap <F8> :NERDTreeToggle<CR>
-
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
-    \ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
-autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
