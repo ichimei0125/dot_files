@@ -1,23 +1,2 @@
-syntax on
-set number
-set relativenumber
-set tabstop=4
-set softtabstop=4
-set expandtab
-set shiftwidth=4
-set smartindent
-set wrap
-set ignorecase
-set smartcase
-set incsearch
-set mouse=a
-set clipboard+=unnamedplus
-set encoding=utf-8
-set fileencoding=utf-8
-set fileencodings=utf-8,cp932
-set fileformats=unix,dos,mac
-set signcolumn=yes
-set updatetime=250
-set termguicolors
-set completeopt=menu,menuone,noselect
-set cursorline
+" Legacy Vim compatibility file.
+" Neovim now uses the Lua modules in lua/config and lua/plugins.

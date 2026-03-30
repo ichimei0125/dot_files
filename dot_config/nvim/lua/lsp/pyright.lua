@@ -33,6 +33,7 @@ function M.get_python_path(root_dir)
   if executable("python3") then
     return "python3"
   end
+
   return "python"
 end
 

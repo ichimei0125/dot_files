@@ -1,14 +1,19 @@
 local pyright = require("lsp.pyright")
+local lsp = require("config.lsp")
 
-local function python_path(root_dir)
-  return pyright.get_python_path(root_dir)
-end
+local M = {}
 
 local uv = vim.uv or vim.loop
 local ensured_venv_roots = {}
 
 local function path_exists(path)
   return path and uv.fs_stat(path) ~= nil
+end
+
+local function notify(msg, level)
+  vim.schedule(function()
+    vim.notify(msg, level or vim.log.levels.INFO, { title = "Python IDE" })
+  end)
 end
 
 local function find_venv(root_dir)
@@ -35,9 +40,9 @@ local function venv_python(venv)
     vim.fs.joinpath(venv, "Scripts", "python.exe"),
   }
 
-  for _, py in ipairs(candidates) do
-    if path_exists(py) then
-      return py
+  for _, path in ipairs(candidates) do
+    if path_exists(path) then
+      return path
     end
   end
 end
@@ -60,18 +65,13 @@ local function local_venv_bin(root_dir, name)
   end
 end
 
-local function notify(msg, level)
-  vim.schedule(function()
-    vim.notify(msg, level or vim.log.levels.INFO, { title = "Python venv" })
-  end)
-end
-
 local function has_python_module(py, module)
   local result = vim.system({
     py,
     "-c",
     ([[import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(%q) else 1)]]):format(module),
   }, { text = true }):wait()
+
   return result.code == 0
 end
 
@@ -148,7 +148,7 @@ local function ensure_venv_python_packages(root_dir)
 
   local py = venv_python(venv)
   if not py then
-    notify(("发现虚拟环境但没找到 python: %s"):format(venv), vim.log.levels.WARN)
+    notify(("Virtual environment found but python is missing: %s"):format(venv), vim.log.levels.WARN)
     return
   end
 
@@ -173,7 +173,7 @@ local function ensure_venv_python_packages(root_dir)
     return
   end
 
-  notify(("%s 缺失，正在安装到 %s"):format(table.concat(missing, ", "), venv))
+  notify(("%s missing, installing into %s"):format(table.concat(missing, ", "), venv))
 
   vim.schedule(function()
     local uv_cmd = find_uv(root)
@@ -183,123 +183,81 @@ local function ensure_venv_python_packages(root_dir)
       if uv_cmd then
         ok, err = install_with_uv(uv_cmd, py, missing)
         if ok then
-          notify(("已通过 uv 安装到项目虚拟环境: %s"):format(table.concat(missing, ", ")))
+          notify(("Installed with uv: %s"):format(table.concat(missing, ", ")))
           return
         end
-        notify(("uv 安装失败，准备修复 pip: %s"):format(err), vim.log.levels.WARN)
+        notify(("uv install failed, attempting ensurepip: %s"):format(err), vim.log.levels.WARN)
       end
 
       ok, err = repair_pip(py)
       if not ok then
-        notify(("修复 pip 失败: %s"):format(err), vim.log.levels.ERROR)
+        notify(("Failed to repair pip: %s"):format(err), vim.log.levels.ERROR)
         return
       end
     end
 
     ok, err = install_with_pip(py, missing)
     if ok then
-      notify(("已安装到项目虚拟环境: %s"):format(table.concat(missing, ", ")))
+      notify(("Installed into project virtualenv: %s"):format(table.concat(missing, ", ")))
     else
-      notify(("安装失败: %s"):format(err), vim.log.levels.ERROR)
+      notify(("Package installation failed: %s"):format(err), vim.log.levels.ERROR)
     end
   end)
 end
 
-local ok_mason, mason = pcall(require, "mason")
-if ok_mason then
-  mason.setup()
+local function organize_imports(bufnr)
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  local root = vim.fs.dirname(filename)
+  local ruff_cmd = local_venv_bin(root, "ruff") or "ruff"
+
+  vim.system({ ruff_cmd, "check", "--select", "I", "--fix", filename }, { text = true }):wait()
+  vim.cmd("edit")
 end
 
-pcall(function()
-  require("mason-tool-installer").setup({
-    ensure_installed = {
-      "pyright",
-      "ruff",
-      "debugpy",
-      "black",
-      "isort",
-    },
-    auto_update = false,
-    run_on_start = true,
-    start_delay = 3000,
-  })
-end)
+local function setup_pyright()
+  local base_on_attach = pyright.on_attach
 
-pcall(function()
-  require("mason-lspconfig").setup({
-    ensure_installed = { "pyright", "ruff" },
-    automatic_enable = false,
-  })
-end)
+  pyright.capabilities = lsp.capabilities()
+  pyright.on_attach = function(client, bufnr)
+    if base_on_attach then
+      base_on_attach(client, bufnr)
+    end
 
-pcall(function()
-  require("luasnip.loaders.from_vscode").lazy_load()
-end)
+    lsp.on_attach(client, bufnr)
 
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-local ok_cmp_lsp, cmp_lsp = pcall(require, "cmp_nvim_lsp")
-if ok_cmp_lsp then
-  capabilities = cmp_lsp.default_capabilities(capabilities)
+    vim.keymap.set("n", "<leader>oi", function()
+      organize_imports(bufnr)
+    end, { buffer = bufnr, silent = true, desc = "Organize imports" })
+  end
+
+  vim.lsp.config("pyright", pyright)
+  vim.lsp.enable("pyright")
 end
 
-pyright.capabilities = capabilities
-vim.lsp.config("pyright", pyright)
-vim.lsp.enable("pyright")
-
-vim.lsp.config("ruff", {
-  capabilities = capabilities,
-  init_options = {
-    settings = {
-      args = {},
+local function setup_ruff()
+  vim.lsp.config("ruff", {
+    capabilities = lsp.capabilities(),
+    on_attach = function(client, bufnr)
+      client.server_capabilities.hoverProvider = false
+      lsp.on_attach(client, bufnr)
+    end,
+    init_options = {
+      settings = {
+        args = {},
+      },
     },
-  },
-  on_attach = function(client)
-    client.server_capabilities.hoverProvider = false
-  end,
-})
-vim.lsp.enable("ruff")
-
-local ok_cmp, cmp = pcall(require, "cmp")
-local ok_luasnip, luasnip = pcall(require, "luasnip")
-if ok_cmp and ok_luasnip then
-  cmp.setup({
-    snippet = {
-      expand = function(args)
-        luasnip.lsp_expand(args.body)
-      end,
-    },
-    mapping = cmp.mapping.preset.insert({
-      ["<C-Space>"] = cmp.mapping.complete(),
-      ["<CR>"] = cmp.mapping.confirm({ select = true }),
-      ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then
-          luasnip.expand_or_jump()
-        else
-          fallback()
-        end
-      end, { "i", "s" }),
-      ["<S-Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_prev_item()
-        elseif luasnip.jumpable(-1) then
-          luasnip.jump(-1)
-        else
-          fallback()
-        end
-      end, { "i", "s" }),
-    }),
-    sources = cmp.config.sources({
-      { name = "nvim_lsp" },
-      { name = "luasnip" },
-      { name = "path" },
-      { name = "buffer" },
-    }),
   })
+
+  vim.lsp.enable("ruff")
 end
 
-pcall(function()
+local function setup_conform()
+  if vim.g.loaded_python_conform == 1 then
+    return
+  end
+
+  vim.g.loaded_python_conform = 1
+
   require("conform").setup({
     notify_on_error = true,
     format_on_save = function(bufnr)
@@ -315,50 +273,33 @@ pcall(function()
     },
     formatters = {
       isort = {
-        command = function()
-          return local_venv_bin(vim.fn.getcwd(), "isort") or "isort"
+        command = function(_, ctx)
+          return local_venv_bin(ctx.dirname, "isort") or "isort"
         end,
       },
       black = {
-        command = function()
-          return local_venv_bin(vim.fn.getcwd(), "black") or "black"
+        command = function(_, ctx)
+          return local_venv_bin(ctx.dirname, "black") or "black"
         end,
       },
     },
   })
-end)
-
-local function map(mode, lhs, rhs, desc)
-  vim.keymap.set(mode, lhs, rhs, { silent = true, desc = desc })
 end
 
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(args)
-    local bufnr = args.buf
-    local opts = { buffer = bufnr, silent = true }
-    vim.keymap.set("n", "gd", vim.lsp.buf.definition, vim.tbl_extend("force", opts, { desc = "LSP Goto Definition" }))
-    vim.keymap.set("n", "gr", vim.lsp.buf.references, vim.tbl_extend("force", opts, { desc = "LSP References" }))
-    vim.keymap.set("n", "K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "LSP Hover" }))
-    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "LSP Rename" }))
-    vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, vim.tbl_extend("force", opts, { desc = "LSP Code Action" }))
-    vim.keymap.set("n", "<leader>f", function()
-      require("conform").format({ async = true, lsp_fallback = true, bufnr = bufnr })
-    end, vim.tbl_extend("force", opts, { desc = "Format Buffer" }))
-    vim.keymap.set("n", "<leader>oi", function()
-      local filename = vim.api.nvim_buf_get_name(bufnr)
-      local ruff_cmd = local_venv_bin(vim.fn.getcwd(), "ruff") or "ruff"
-      vim.system({ ruff_cmd, "check", "--select", "I", "--fix", filename }, { text = true }):wait()
-      vim.cmd("edit")
-    end, vim.tbl_extend("force", opts, { desc = "Organize Imports (ruff)" }))
-  end,
-})
+local function setup_dap()
+  if vim.g.loaded_python_dap == 1 then
+    return
+  end
 
-local ok_dap, dap = pcall(require, "dap")
-local ok_dapui, dapui = pcall(require, "dapui")
-local ok_dap_python, dap_python = pcall(require, "dap-python")
-if ok_dap and ok_dap_python then
+  vim.g.loaded_python_dap = 1
+
+  local dap = require("dap")
+  local dapui = require("dapui")
+  local dap_python = require("dap-python")
+
   ensure_venv_python_packages(vim.fn.getcwd())
-  dap_python.setup(python_path(vim.fn.getcwd()))
+
+  dap_python.setup(pyright.get_python_path(vim.fn.getcwd()))
   dap_python.test_runner = "pytest"
 
   dap.configurations.python = {
@@ -368,7 +309,7 @@ if ok_dap and ok_dap_python then
       name = "Launch current file",
       program = "${file}",
       pythonPath = function()
-        return python_path(vim.fn.getcwd())
+        return pyright.get_python_path(vim.fn.getcwd())
       end,
       console = "integratedTerminal",
       cwd = "${workspaceFolder}",
@@ -381,7 +322,7 @@ if ok_dap and ok_dap_python then
       module = "pytest",
       args = { "${file}" },
       pythonPath = function()
-        return python_path(vim.fn.getcwd())
+        return pyright.get_python_path(vim.fn.getcwd())
       end,
       console = "integratedTerminal",
       cwd = "${workspaceFolder}",
@@ -392,38 +333,78 @@ if ok_dap and ok_dap_python then
   vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DiagnosticError", linehl = "", numhl = "" })
   vim.fn.sign_define("DapStopped", { text = "▶", texthl = "DiagnosticWarn", linehl = "", numhl = "" })
 
-  map("n", "<F5>", function() dap.continue() end, "DAP Continue")
-  map("n", "<F10>", function() dap.step_over() end, "DAP Step Over")
-  map("n", "<F11>", function() dap.step_into() end, "DAP Step Into")
-  map("n", "<F12>", function() dap.step_out() end, "DAP Step Out")
-  map("n", "<leader>db", function() dap.toggle_breakpoint() end, "DAP Toggle Breakpoint")
-  map("n", "<leader>dB", function() dap.set_breakpoint(vim.fn.input("Breakpoint condition: ")) end, "DAP Conditional Breakpoint")
-  map("n", "<leader>dr", function() dap.repl.open() end, "DAP Open REPL")
-  map("n", "<leader>du", function()
-    if ok_dapui then
-      dapui.toggle({})
-    end
-  end, "DAP UI Toggle")
-  map("n", "<leader>dt", function() dap_python.test_method() end, "DAP Debug Test Method")
-  map("n", "<leader>df", function() dap_python.test_class() end, "DAP Debug Test Class")
+  local map = function(lhs, rhs, desc)
+    vim.keymap.set("n", lhs, rhs, { silent = true, desc = desc })
+  end
 
-  if ok_dapui then
-    dapui.setup()
-    dap.listeners.after.event_initialized["dapui_config"] = function()
-      dapui.open()
-    end
-    dap.listeners.before.event_terminated["dapui_config"] = function()
-      dapui.close()
-    end
-    dap.listeners.before.event_exited["dapui_config"] = function()
-      dapui.close()
-    end
+  map("<F5>", dap.continue, "DAP continue")
+  map("<F10>", dap.step_over, "DAP step over")
+  map("<F11>", dap.step_into, "DAP step into")
+  map("<F12>", dap.step_out, "DAP step out")
+  map("<leader>db", dap.toggle_breakpoint, "Toggle breakpoint")
+  map("<leader>dB", function()
+    dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
+  end, "Conditional breakpoint")
+  map("<leader>dr", dap.repl.open, "Open REPL")
+  map("<leader>du", function()
+    dapui.toggle({})
+  end, "DAP UI")
+  map("<leader>dt", dap_python.test_method, "Debug test method")
+  map("<leader>df", dap_python.test_class, "Debug test class")
+
+  dapui.setup({
+    layouts = {
+      {
+        elements = {
+          { id = "scopes", size = 0.50 },
+          { id = "breakpoints", size = 0.17 },
+          { id = "stacks", size = 0.17 },
+          { id = "watches", size = 0.16 },
+        },
+        position = "right",
+        size = 48,
+      },
+      {
+        elements = {
+          { id = "repl", size = 0.55 },
+          { id = "console", size = 0.45 },
+        },
+        position = "bottom",
+        size = 12,
+      },
+    },
+  })
+
+  dap.listeners.after.event_initialized["dapui_config"] = function()
+    dapui.open()
+  end
+  dap.listeners.before.event_terminated["dapui_config"] = function()
+    dapui.close()
+  end
+  dap.listeners.before.event_exited["dapui_config"] = function()
+    dapui.close()
   end
 end
 
-vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
-  callback = function(args)
-    local dir = (args and args.file ~= "") and args.file or vim.fn.getcwd()
-    ensure_venv_python_packages(dir)
-  end,
-})
+function M.setup()
+  if vim.g.loaded_python_ide_config == 1 then
+    return
+  end
+
+  vim.g.loaded_python_ide_config = 1
+
+  setup_pyright()
+  setup_ruff()
+  setup_conform()
+  setup_dap()
+
+  vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
+    group = vim.api.nvim_create_augroup("user_python_venv", { clear = true }),
+    callback = function(args)
+      local dir = (args and args.file ~= "") and args.file or vim.fn.getcwd()
+      ensure_venv_python_packages(dir)
+    end,
+  })
+end
+
+return M
