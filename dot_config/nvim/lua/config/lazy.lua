@@ -22,7 +22,7 @@ require("lazy").setup({
   },
   checker = { enabled = true },
   change_detection = { notify = false },
-  install = { colorscheme = { "catppuccin" } },
+  install = { colorscheme = { "nord" } },
   performance = {
     rtp = {
       disabled_plugins = {

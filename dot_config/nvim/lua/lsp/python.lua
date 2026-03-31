@@ -1,4 +1,3 @@
-local pyright = require("lsp.pyright")
 local lsp = require("config.lsp")
 
 local M = {}
@@ -8,6 +7,10 @@ local ensured_venv_roots = {}
 
 local function path_exists(path)
   return path and uv.fs_stat(path) ~= nil
+end
+
+local function executable(path)
+  return path and vim.fn.executable(path) == 1
 end
 
 local function notify(msg, level)
@@ -27,6 +30,45 @@ local function find_venv(root_dir)
     if path_exists(venv) then
       return venv
     end
+  end
+end
+
+local function get_python_path(root_dir)
+  local base = root_dir or vim.fn.getcwd()
+  local candidates = {
+    vim.env.VIRTUAL_ENV and vim.fs.joinpath(vim.env.VIRTUAL_ENV, "bin", "python") or nil,
+    vim.env.VIRTUAL_ENV and vim.fs.joinpath(vim.env.VIRTUAL_ENV, "Scripts", "python.exe") or nil,
+    vim.fs.joinpath(base, ".venv", "bin", "python"),
+    vim.fs.joinpath(base, ".venv", "Scripts", "python.exe"),
+    vim.fs.joinpath(base, "venv", "bin", "python"),
+    vim.fs.joinpath(base, "venv", "Scripts", "python.exe"),
+  }
+
+  for _, path in ipairs(candidates) do
+    if path_exists(path) then
+      return path
+    end
+  end
+
+  if executable("python3") then
+    return "python3"
+  end
+
+  return "python"
+end
+
+local function set_python_path(command)
+  local path = command.args
+  local clients = vim.lsp.get_clients({
+    bufnr = vim.api.nvim_get_current_buf(),
+    name = "pyright",
+  })
+
+  for _, client in ipairs(clients) do
+    client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
+      python = { pythonPath = path },
+    })
+    client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
   end
 end
 
@@ -214,23 +256,66 @@ local function organize_imports(bufnr)
   vim.cmd("edit")
 end
 
+local function pyright_config()
+  return {
+    cmd = { "pyright-langserver", "--stdio" },
+    filetypes = { "python" },
+    root_markers = {
+      "pyrightconfig.json",
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg",
+      "requirements.txt",
+      "Pipfile",
+      ".git",
+    },
+    settings = {
+      python = {
+        pythonPath = get_python_path(vim.fn.getcwd()),
+        analysis = {
+          autoImportCompletions = true,
+          autoSearchPaths = true,
+          diagnosticMode = "workspace",
+          typeCheckingMode = "basic",
+          useLibraryCodeForTypes = true,
+        },
+      },
+      pyright = {
+        disableOrganizeImports = true,
+      },
+    },
+    on_init = function(client)
+      local python_path = get_python_path(client.config.root_dir)
+      client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
+        python = { pythonPath = python_path },
+      })
+    end,
+    on_attach = function(client, bufnr)
+      local python_path = get_python_path(client.config.root_dir)
+      client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
+        python = { pythonPath = python_path },
+      })
+      client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+
+      vim.api.nvim_buf_create_user_command(bufnr, "LspPyrightSetPythonPath", set_python_path, {
+        desc = "Reconfigure pyright with the provided python path",
+        nargs = 1,
+        complete = "file",
+      })
+
+      lsp.on_attach(client, bufnr)
+      vim.keymap.set("n", "<leader>oi", function()
+        organize_imports(bufnr)
+      end, { buffer = bufnr, silent = true, desc = "Organize imports" })
+    end,
+  }
+end
+
 local function setup_pyright()
-  local base_on_attach = pyright.on_attach
+  local config = pyright_config()
+  config.capabilities = lsp.capabilities()
 
-  pyright.capabilities = lsp.capabilities()
-  pyright.on_attach = function(client, bufnr)
-    if base_on_attach then
-      base_on_attach(client, bufnr)
-    end
-
-    lsp.on_attach(client, bufnr)
-
-    vim.keymap.set("n", "<leader>oi", function()
-      organize_imports(bufnr)
-    end, { buffer = bufnr, silent = true, desc = "Organize imports" })
-  end
-
-  vim.lsp.config("pyright", pyright)
+  vim.lsp.config("pyright", config)
   vim.lsp.enable("pyright")
 end
 
@@ -299,7 +384,7 @@ local function setup_dap()
 
   ensure_venv_python_packages(vim.fn.getcwd())
 
-  dap_python.setup(pyright.get_python_path(vim.fn.getcwd()))
+  dap_python.setup(get_python_path(vim.fn.getcwd()))
   dap_python.test_runner = "pytest"
 
   dap.configurations.python = {
@@ -309,7 +394,7 @@ local function setup_dap()
       name = "Launch current file",
       program = "${file}",
       pythonPath = function()
-        return pyright.get_python_path(vim.fn.getcwd())
+        return get_python_path(vim.fn.getcwd())
       end,
       console = "integratedTerminal",
       cwd = "${workspaceFolder}",
@@ -322,7 +407,7 @@ local function setup_dap()
       module = "pytest",
       args = { "${file}" },
       pythonPath = function()
-        return pyright.get_python_path(vim.fn.getcwd())
+        return get_python_path(vim.fn.getcwd())
       end,
       console = "integratedTerminal",
       cwd = "${workspaceFolder}",
