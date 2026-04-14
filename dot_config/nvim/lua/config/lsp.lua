@@ -82,11 +82,6 @@ function M.setup()
   require("mason-tool-installer").setup({
     ensure_installed = {
       "lua_ls",
-      "pyright",
-      "ruff",
-      "debugpy",
-      "black",
-      "isort",
     },
     auto_update = false,
     run_on_start = true,
@@ -96,8 +91,6 @@ function M.setup()
   require("mason-lspconfig").setup({
     ensure_installed = {
       "lua_ls",
-      "pyright",
-      "ruff",
     },
     automatic_enable = false,
   })

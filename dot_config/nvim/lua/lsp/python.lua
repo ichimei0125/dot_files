@@ -3,7 +3,7 @@ local lsp = require("config.lsp")
 local M = {}
 
 local uv = vim.uv or vim.loop
-local ensured_venv_roots = {}
+local notified_venv_roots = {}
 
 local function path_exists(path)
   return path and uv.fs_stat(path) ~= nil
@@ -117,69 +117,9 @@ local function has_python_module(py, module)
   return result.code == 0
 end
 
-local function has_pip(py)
-  return has_python_module(py, "pip")
-end
-
-local function find_uv(root_dir)
+local function notify_missing_venv_python_packages(root_dir)
   local root = root_dir or vim.fn.getcwd()
-  local candidates = {
-    vim.fs.joinpath(root, ".venv", "Scripts", "uv.exe"),
-    vim.fs.joinpath(root, ".venv", "bin", "uv"),
-    vim.fs.joinpath(root, "venv", "Scripts", "uv.exe"),
-    vim.fs.joinpath(root, "venv", "bin", "uv"),
-    vim.fn.exepath("uv"),
-  }
-
-  for _, candidate in ipairs(candidates) do
-    if candidate and candidate ~= "" and path_exists(candidate) then
-      return candidate
-    end
-  end
-end
-
-local function install_with_uv(uv_cmd, py, packages)
-  if not uv_cmd then
-    return false, "uv not found"
-  end
-
-  local result = vim.system(
-    vim.list_extend({ uv_cmd, "pip", "install", "--python", py }, packages),
-    { text = true }
-  ):wait()
-
-  if result.code == 0 then
-    return true, nil
-  end
-
-  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
-end
-
-local function repair_pip(py)
-  local result = vim.system({ py, "-m", "ensurepip", "--upgrade" }, { text = true }):wait()
-  if result.code == 0 and has_pip(py) then
-    return true, nil
-  end
-
-  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
-end
-
-local function install_with_pip(py, packages)
-  local result = vim.system(
-    vim.list_extend({ py, "-m", "pip", "install", "--disable-pip-version-check" }, packages),
-    { text = true }
-  ):wait()
-
-  if result.code == 0 then
-    return true, nil
-  end
-
-  return false, (result.stderr or result.stdout or "unknown error"):gsub("%s+$", "")
-end
-
-local function ensure_venv_python_packages(root_dir)
-  local root = root_dir or vim.fn.getcwd()
-  if ensured_venv_roots[root] then
+  if notified_venv_roots[root] then
     return
   end
 
@@ -193,8 +133,6 @@ local function ensure_venv_python_packages(root_dir)
     notify(("Virtual environment found but python is missing: %s"):format(venv), vim.log.levels.WARN)
     return
   end
-
-  ensured_venv_roots[root] = true
 
   local required_modules = {
     { module = "debugpy", package = "debugpy" },
@@ -215,36 +153,14 @@ local function ensure_venv_python_packages(root_dir)
     return
   end
 
-  notify(("%s missing, installing into %s"):format(table.concat(missing, ", "), venv))
-
-  vim.schedule(function()
-    local uv_cmd = find_uv(root)
-    local ok, err
-
-    if not has_pip(py) then
-      if uv_cmd then
-        ok, err = install_with_uv(uv_cmd, py, missing)
-        if ok then
-          notify(("Installed with uv: %s"):format(table.concat(missing, ", ")))
-          return
-        end
-        notify(("uv install failed, attempting ensurepip: %s"):format(err), vim.log.levels.WARN)
-      end
-
-      ok, err = repair_pip(py)
-      if not ok then
-        notify(("Failed to repair pip: %s"):format(err), vim.log.levels.ERROR)
-        return
-      end
-    end
-
-    ok, err = install_with_pip(py, missing)
-    if ok then
-      notify(("Installed into project virtualenv: %s"):format(table.concat(missing, ", ")))
-    else
-      notify(("Package installation failed: %s"):format(err), vim.log.levels.ERROR)
-    end
-  end)
+  notified_venv_roots[root] = true
+  notify(
+    ("Missing project Python packages in %s: %s. Install them manually if needed."):format(
+      venv,
+      table.concat(missing, ", ")
+    ),
+    vim.log.levels.WARN
+  )
 end
 
 local function organize_imports(bufnr)
@@ -312,6 +228,11 @@ local function pyright_config()
 end
 
 local function setup_pyright()
+  if not executable("pyright-langserver") then
+    notify("pyright-langserver not found. Install it manually if needed.", vim.log.levels.WARN)
+    return
+  end
+
   local config = pyright_config()
   config.capabilities = lsp.capabilities()
 
@@ -320,6 +241,11 @@ local function setup_pyright()
 end
 
 local function setup_ruff()
+  if not executable("ruff") then
+    notify("ruff not found. Install it manually if needed.", vim.log.levels.WARN)
+    return
+  end
+
   vim.lsp.config("ruff", {
     capabilities = lsp.capabilities(),
     on_attach = function(client, bufnr)
@@ -382,7 +308,7 @@ local function setup_dap()
   local dapui = require("dapui")
   local dap_python = require("dap-python")
 
-  ensure_venv_python_packages(vim.fn.getcwd())
+  notify_missing_venv_python_packages(vim.fn.getcwd())
 
   dap_python.setup(get_python_path(vim.fn.getcwd()))
   dap_python.test_runner = "pytest"
@@ -487,7 +413,7 @@ function M.setup()
     group = vim.api.nvim_create_augroup("user_python_venv", { clear = true }),
     callback = function(args)
       local dir = (args and args.file ~= "") and args.file or vim.fn.getcwd()
-      ensure_venv_python_packages(dir)
+      notify_missing_venv_python_packages(dir)
     end,
   })
 end
