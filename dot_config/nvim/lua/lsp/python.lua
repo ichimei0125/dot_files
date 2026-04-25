@@ -61,12 +61,18 @@ local function set_python_path(command)
   local path = command.args
   local clients = vim.lsp.get_clients({
     bufnr = vim.api.nvim_get_current_buf(),
-    name = "pyright",
+    name = "ty",
   })
 
   for _, client in ipairs(clients) do
     client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
-      python = { pythonPath = path },
+      ty = {
+        configuration = {
+          environment = {
+            python = path,
+          },
+        },
+      },
     })
     client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
   end
@@ -172,12 +178,12 @@ local function organize_imports(bufnr)
   vim.cmd("edit")
 end
 
-local function pyright_config()
+local function ty_config()
   return {
-    cmd = { "pyright-langserver", "--stdio" },
+    cmd = { "ty", "server" },
     filetypes = { "python" },
     root_markers = {
-      "pyrightconfig.json",
+      "ty.toml",
       "pyproject.toml",
       "setup.py",
       "setup.cfg",
@@ -186,35 +192,50 @@ local function pyright_config()
       ".git",
     },
     settings = {
-      python = {
-        pythonPath = get_python_path(vim.fn.getcwd()),
-        analysis = {
-          autoImportCompletions = true,
-          autoSearchPaths = true,
-          diagnosticMode = "workspace",
-          typeCheckingMode = "basic",
-          useLibraryCodeForTypes = true,
+      ty = {
+        diagnosticMode = "workspace",
+        completions = {
+          autoImport = true,
         },
-      },
-      pyright = {
-        disableOrganizeImports = true,
+        configuration = {
+          environment = {
+            python = get_python_path(vim.fn.getcwd()),
+          },
+        },
       },
     },
     on_init = function(client)
       local python_path = get_python_path(client.config.root_dir)
       client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
-        python = { pythonPath = python_path },
+        ty = {
+          configuration = {
+            environment = {
+              python = python_path,
+            },
+          },
+        },
       })
     end,
     on_attach = function(client, bufnr)
       local python_path = get_python_path(client.config.root_dir)
       client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
-        python = { pythonPath = python_path },
+        ty = {
+          configuration = {
+            environment = {
+              python = python_path,
+            },
+          },
+        },
       })
       client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 
+      vim.api.nvim_buf_create_user_command(bufnr, "LspTySetPythonPath", set_python_path, {
+        desc = "Reconfigure ty with the provided python path",
+        nargs = 1,
+        complete = "file",
+      })
       vim.api.nvim_buf_create_user_command(bufnr, "LspPyrightSetPythonPath", set_python_path, {
-        desc = "Reconfigure pyright with the provided python path",
+        desc = "Reconfigure ty with the provided python path",
         nargs = 1,
         complete = "file",
       })
@@ -227,17 +248,17 @@ local function pyright_config()
   }
 end
 
-local function setup_pyright()
-  if not executable("pyright-langserver") then
-    notify("pyright-langserver not found. Install it manually if needed.", vim.log.levels.WARN)
+local function setup_ty()
+  if not executable("ty") then
+    notify("ty not found. Install it manually if needed.", vim.log.levels.WARN)
     return
   end
 
-  local config = pyright_config()
+  local config = ty_config()
   config.capabilities = lsp.capabilities()
 
-  vim.lsp.config("pyright", config)
-  vim.lsp.enable("pyright")
+  vim.lsp.config("ty", config)
+  vim.lsp.enable("ty")
 end
 
 local function setup_ruff()
@@ -247,6 +268,14 @@ local function setup_ruff()
   end
 
   vim.lsp.config("ruff", {
+    cmd = { "ruff", "server" },
+    filetypes = { "python" },
+    root_markers = {
+      "pyproject.toml",
+      "ruff.toml",
+      ".ruff.toml",
+      ".git",
+    },
     capabilities = lsp.capabilities(),
     on_attach = function(client, bufnr)
       client.server_capabilities.hoverProvider = false
@@ -404,7 +433,7 @@ function M.setup()
 
   vim.g.loaded_python_ide_config = 1
 
-  setup_pyright()
+  setup_ty()
   setup_ruff()
   setup_conform()
   setup_dap()
