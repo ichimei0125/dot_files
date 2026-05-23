@@ -56,11 +56,12 @@ function M.setup()
     "ruff",
   }
 
-  local tools = vim.list_extend(vim.deepcopy(lsp_servers), {
+  local tools = {
     "black",
     "debugpy",
     "isort",
-  })
+    "tree-sitter-cli",
+  }
 
   vim.diagnostic.config({
     severity_sort = true,

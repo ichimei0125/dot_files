@@ -4,9 +4,23 @@ local M = {}
 
 local uv = vim.uv or vim.loop
 local notified_venv_roots = {}
+local project_root_markers = {
+  "ty.toml",
+  "pyproject.toml",
+  "setup.py",
+  "setup.cfg",
+  "requirements.txt",
+  "Pipfile",
+  ".git",
+}
 
 local function path_exists(path)
   return path and uv.fs_stat(path) ~= nil
+end
+
+local function path_is_dir(path)
+  local stat = path and uv.fs_stat(path)
+  return stat and stat.type == "directory"
 end
 
 local function executable(path)
@@ -25,28 +39,65 @@ local function normalize_path(path)
   return vim.fs.normalize(path)
 end
 
+local function normalize_dir(path)
+  local normalized = normalize_path(path)
+  if not normalized then
+    return nil
+  end
+
+  local stat = uv.fs_stat(normalized)
+  if stat and stat.type == "file" then
+    return vim.fs.dirname(normalized)
+  end
+
+  return normalized
+end
+
 local function notify(msg, level)
   vim.schedule(function()
     vim.notify(msg, level or vim.log.levels.INFO, { title = "Python IDE" })
   end)
 end
 
-local function find_venv(root_dir)
-  local root = normalize_path(root_dir) or vim.fn.getcwd()
-  local candidates = {
-    vim.fs.joinpath(root, ".venv"),
-    vim.fs.joinpath(root, "venv"),
-  }
+local function find_project_root(path)
+  local start = normalize_dir(path) or vim.fn.getcwd()
+  local marker = vim.fs.find(project_root_markers, { path = start, upward = true })[1]
 
-  for _, venv in ipairs(candidates) do
-    if path_exists(venv) then
-      return venv
+  if marker then
+    return vim.fs.dirname(marker)
+  end
+
+  return start
+end
+
+local function find_venv(path)
+  local start = normalize_dir(path) or vim.fn.getcwd()
+  local root = find_project_root(start)
+  local dir = start
+
+  while dir do
+    for _, name in ipairs({ ".venv", "venv" }) do
+      local venv = vim.fs.joinpath(dir, name)
+      if path_is_dir(venv) then
+        return venv
+      end
     end
+
+    if dir == root then
+      break
+    end
+
+    local parent = vim.fs.dirname(dir)
+    if not parent or parent == dir then
+      break
+    end
+
+    dir = parent
   end
 end
 
 local function get_python_path(root_dir)
-  local base = normalize_path(root_dir) or vim.fn.getcwd()
+  local base = normalize_dir(root_dir) or vim.fn.getcwd()
   local candidates = {}
   local add_candidate = function(path)
     if path then
@@ -60,12 +111,12 @@ local function get_python_path(root_dir)
     add_candidate(vim.fs.joinpath(vim.env.VIRTUAL_ENV, "Scripts", "python.exe"))
   end
 
-  add_candidate(vim.fs.joinpath(base, ".venv", "bin", "python"))
-  add_candidate(vim.fs.joinpath(base, ".venv", "bin", "python3"))
-  add_candidate(vim.fs.joinpath(base, ".venv", "Scripts", "python.exe"))
-  add_candidate(vim.fs.joinpath(base, "venv", "bin", "python"))
-  add_candidate(vim.fs.joinpath(base, "venv", "bin", "python3"))
-  add_candidate(vim.fs.joinpath(base, "venv", "Scripts", "python.exe"))
+  local venv = find_venv(base)
+  if venv then
+    add_candidate(vim.fs.joinpath(venv, "bin", "python"))
+    add_candidate(vim.fs.joinpath(venv, "bin", "python3"))
+    add_candidate(vim.fs.joinpath(venv, "Scripts", "python.exe"))
+  end
 
   for _, path in ipairs(candidates) do
     if path_exists(path) then
@@ -180,7 +231,7 @@ local function has_python_module(py, module)
 end
 
 local function notify_missing_venv_python_packages(root_dir)
-  local root = root_dir or vim.fn.getcwd()
+  local root = find_project_root(root_dir)
   if notified_venv_roots[root] then
     return
   end
@@ -234,15 +285,7 @@ local function ty_config()
   return {
     cmd = { "ty", "server" },
     filetypes = { "python" },
-    root_markers = {
-      "ty.toml",
-      "pyproject.toml",
-      "setup.py",
-      "setup.cfg",
-      "requirements.txt",
-      "Pipfile",
-      ".git",
-    },
+    root_markers = project_root_markers,
     settings = {
       ty = {
         diagnosticMode = "workspace",
@@ -311,6 +354,12 @@ local function setup_ruff()
   })
 
   vim.lsp.enable("ruff")
+end
+
+local function attach_enabled_lsps_to_python_buffers()
+  vim.defer_fn(function()
+    pcall(vim.cmd.doautoall, "nvim.lsp.enable FileType")
+  end, 250)
 end
 
 local function setup_conform()
@@ -457,6 +506,7 @@ function M.setup()
 
   setup_ty()
   setup_ruff()
+  attach_enabled_lsps_to_python_buffers()
   setup_conform()
   setup_dap()
 
