@@ -13,6 +13,18 @@ local function executable(path)
   return path and vim.fn.executable(path) == 1
 end
 
+local function normalize_path(path)
+  if not path or path == "" then
+    return nil
+  end
+
+  if vim.startswith(path, "file://") then
+    return vim.fs.normalize(vim.uri_to_fname(path))
+  end
+
+  return vim.fs.normalize(path)
+end
+
 local function notify(msg, level)
   vim.schedule(function()
     vim.notify(msg, level or vim.log.levels.INFO, { title = "Python IDE" })
@@ -20,7 +32,7 @@ local function notify(msg, level)
 end
 
 local function find_venv(root_dir)
-  local root = root_dir or vim.fn.getcwd()
+  local root = normalize_path(root_dir) or vim.fn.getcwd()
   local candidates = {
     vim.fs.joinpath(root, ".venv"),
     vim.fs.joinpath(root, "venv"),
@@ -34,15 +46,26 @@ local function find_venv(root_dir)
 end
 
 local function get_python_path(root_dir)
-  local base = root_dir or vim.fn.getcwd()
-  local candidates = {
-    vim.env.VIRTUAL_ENV and vim.fs.joinpath(vim.env.VIRTUAL_ENV, "bin", "python") or nil,
-    vim.env.VIRTUAL_ENV and vim.fs.joinpath(vim.env.VIRTUAL_ENV, "Scripts", "python.exe") or nil,
-    vim.fs.joinpath(base, ".venv", "bin", "python"),
-    vim.fs.joinpath(base, ".venv", "Scripts", "python.exe"),
-    vim.fs.joinpath(base, "venv", "bin", "python"),
-    vim.fs.joinpath(base, "venv", "Scripts", "python.exe"),
-  }
+  local base = normalize_path(root_dir) or vim.fn.getcwd()
+  local candidates = {}
+  local add_candidate = function(path)
+    if path then
+      table.insert(candidates, path)
+    end
+  end
+
+  if vim.env.VIRTUAL_ENV then
+    add_candidate(vim.fs.joinpath(vim.env.VIRTUAL_ENV, "bin", "python"))
+    add_candidate(vim.fs.joinpath(vim.env.VIRTUAL_ENV, "bin", "python3"))
+    add_candidate(vim.fs.joinpath(vim.env.VIRTUAL_ENV, "Scripts", "python.exe"))
+  end
+
+  add_candidate(vim.fs.joinpath(base, ".venv", "bin", "python"))
+  add_candidate(vim.fs.joinpath(base, ".venv", "bin", "python3"))
+  add_candidate(vim.fs.joinpath(base, ".venv", "Scripts", "python.exe"))
+  add_candidate(vim.fs.joinpath(base, "venv", "bin", "python"))
+  add_candidate(vim.fs.joinpath(base, "venv", "bin", "python3"))
+  add_candidate(vim.fs.joinpath(base, "venv", "Scripts", "python.exe"))
 
   for _, path in ipairs(candidates) do
     if path_exists(path) then
@@ -50,15 +73,35 @@ local function get_python_path(root_dir)
     end
   end
 
-  if executable("python3") then
-    return "python3"
+  local python3 = vim.fn.exepath("python3")
+  if python3 ~= "" then
+    return python3
   end
 
-  return "python"
+  local python = vim.fn.exepath("python")
+  if python ~= "" then
+    return python
+  end
 end
 
 local function set_python_path(command)
-  local path = command.args
+  local path = normalize_path(command.args)
+  if not path then
+    return
+  end
+
+  local executable_path = vim.fn.exepath(path)
+  if executable_path ~= "" then
+    path = executable_path
+  elseif not path_exists(path) then
+    local absolute_path = vim.fn.fnamemodify(path, ":p")
+    if not path_exists(absolute_path) then
+      notify(("Python path does not exist: %s"):format(path), vim.log.levels.WARN)
+      return
+    end
+    path = absolute_path
+  end
+
   local clients = vim.lsp.get_clients({
     bufnr = vim.api.nvim_get_current_buf(),
     name = "ty",
@@ -76,6 +119,19 @@ local function set_python_path(command)
     })
     client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
   end
+end
+
+local function configure_ty_python(config, root_dir)
+  local python_path = get_python_path(root_dir)
+  if not python_path then
+    return
+  end
+
+  config.settings = config.settings or {}
+  config.settings.ty = config.settings.ty or {}
+  config.settings.ty.configuration = config.settings.ty.configuration or {}
+  config.settings.ty.configuration.environment = config.settings.ty.configuration.environment or {}
+  config.settings.ty.configuration.environment.python = python_path
 end
 
 local function venv_python(venv)
@@ -193,38 +249,13 @@ local function ty_config()
         completions = {
           autoImport = true,
         },
-        configuration = {
-          environment = {
-            python = get_python_path(vim.fn.getcwd()),
-          },
-        },
+        configuration = {},
       },
     },
-    on_init = function(client)
-      local python_path = get_python_path(client.config.root_dir)
-      client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
-        ty = {
-          configuration = {
-            environment = {
-              python = python_path,
-            },
-          },
-        },
-      })
+    before_init = function(_, config)
+      configure_ty_python(config, config.root_dir)
     end,
     on_attach = function(client, bufnr)
-      local python_path = get_python_path(client.config.root_dir)
-      client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, {
-        ty = {
-          configuration = {
-            environment = {
-              python = python_path,
-            },
-          },
-        },
-      })
-      client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
-
       vim.api.nvim_buf_create_user_command(bufnr, "LspTySetPythonPath", set_python_path, {
         desc = "Reconfigure ty with the provided python path",
         nargs = 1,
