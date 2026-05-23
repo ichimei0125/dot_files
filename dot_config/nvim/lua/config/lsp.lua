@@ -50,6 +50,18 @@ function M.on_attach(client, bufnr)
 end
 
 function M.setup()
+  local lsp_servers = {
+    "lua_ls",
+    "ty",
+    "ruff",
+  }
+
+  local tools = vim.list_extend(vim.deepcopy(lsp_servers), {
+    "black",
+    "debugpy",
+    "isort",
+  })
+
   vim.diagnostic.config({
     severity_sort = true,
     underline = true,
@@ -73,25 +85,15 @@ function M.setup()
     },
   })
 
-  require("mason").setup({
-    ui = {
-      border = "rounded",
-    },
-  })
-
   require("mason-tool-installer").setup({
-    ensure_installed = {
-      "lua_ls",
-    },
+    ensure_installed = tools,
     auto_update = false,
     run_on_start = true,
     start_delay = 2000,
   })
 
   require("mason-lspconfig").setup({
-    ensure_installed = {
-      "lua_ls",
-    },
+    ensure_installed = lsp_servers,
     automatic_enable = false,
   })
 

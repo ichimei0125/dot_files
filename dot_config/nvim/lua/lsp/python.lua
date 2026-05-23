@@ -141,11 +141,7 @@ local function notify_missing_venv_python_packages(root_dir)
   end
 
   local required_modules = {
-    { module = "debugpy", package = "debugpy" },
     { module = "pytest", package = "pytest" },
-    { module = "ruff", package = "ruff" },
-    { module = "black", package = "black" },
-    { module = "isort", package = "isort" },
   }
 
   local missing = {}
@@ -230,11 +226,6 @@ local function ty_config()
       client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 
       vim.api.nvim_buf_create_user_command(bufnr, "LspTySetPythonPath", set_python_path, {
-        desc = "Reconfigure ty with the provided python path",
-        nargs = 1,
-        complete = "file",
-      })
-      vim.api.nvim_buf_create_user_command(bufnr, "LspPyrightSetPythonPath", set_python_path, {
         desc = "Reconfigure ty with the provided python path",
         nargs = 1,
         complete = "file",
@@ -339,7 +330,7 @@ local function setup_dap()
 
   notify_missing_venv_python_packages(vim.fn.getcwd())
 
-  dap_python.setup(get_python_path(vim.fn.getcwd()))
+  dap_python.setup("debugpy-adapter", { include_configs = false })
   dap_python.test_runner = "pytest"
 
   dap.configurations.python = {
