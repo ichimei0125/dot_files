@@ -419,6 +419,10 @@ local function setup_dap()
       request = "launch",
       name = "Launch current file",
       program = "${file}",
+      args = function()
+        local input = vim.fn.input("Arguments: ")
+        return vim.split(input, "%s+", { trimempty = true })
+      end,
       pythonPath = function()
         return get_python_path(vim.fn.getcwd())
       end,
